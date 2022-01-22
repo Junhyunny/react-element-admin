@@ -21,19 +21,27 @@ const Signup = () => {
     };
 
     const onSignupHandler = () => {
+        let invalid = false;
         if (userId === '') {
-            setIsInvalid(true);
-            return;
+            invalid = true;
         }
         if (password === '') {
-            setIsInvalid(true);
-            return;
+            invalid = true;
         }
         if (confirmedPassword === '') {
-            setIsInvalid(true);
+            invalid = true;
+        }
+        if (password !== confirmedPassword) {
+            invalid = true;
+        }
+        setIsInvalid(invalid);
+        if(invalid) {
             return;
         }
-        signup();
+        signup({
+            userId,
+            password
+        });
     };
 
     return (
@@ -41,6 +49,7 @@ const Signup = () => {
             {isInvalid && !userId && <p>You should enter ID.</p>}
             <input placeholder="ID" onChange={onChangeIdHandler} value={userId}/>
             {isInvalid && !password && <p>You should enter password.</p>}
+            {isInvalid && password !== confirmedPassword && <p>Please check password.</p>}
             <input placeholder="PASSWORD" type="password" onChange={onChangePasswordHandler} value={password}/>
             {isInvalid && !confirmedPassword && <p>You should enter confirm password.</p>}
             <input
