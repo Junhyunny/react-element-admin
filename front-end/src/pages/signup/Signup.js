@@ -22,13 +22,7 @@ const Signup = () => {
 
     const onSignupHandler = () => {
         let invalid = false;
-        if (userId === '') {
-            invalid = true;
-        }
-        if (password === '') {
-            invalid = true;
-        }
-        if (confirmedPassword === '') {
+        if (userId === '' || password === '' || confirmedPassword === '') {
             invalid = true;
         }
         if (password !== confirmedPassword) {
