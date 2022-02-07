@@ -6,7 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -55,6 +57,14 @@ public class LoginControllerTest {
         utilities.when(JwtUtil::createRefreshToken).thenReturn("refreshToken");
         utilities.when(JwtUtil::getTokenType).thenReturn("Bearer");
 
+        when(mockUserService.loadUserByUsername("Junhyunny")).thenReturn(
+                User.builder()
+                        .passwordEncoder(password -> PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(password))
+                        .username("Junhyunny")
+                        .password("1234")
+                        .authorities("ADMIN")
+                        .build()
+        );
 
         MvcResult mvcResult = mockMvc.perform(
                         post("/login")
@@ -90,4 +100,29 @@ public class LoginControllerTest {
         ).hasCause(new UsernameNotFoundException("Not found user by username"));
     }
 
+    @Test
+    public void givenNotMatchedPassword_whenLogin_thenThrowRuntimeException() throws Exception {
+
+        UserDto userDto = UserDto.builder()
+                .userId("Junhyunny")
+                .password("1234")
+                .build();
+
+        when(mockUserService.loadUserByUsername("Junhyunny")).thenReturn(
+                User.builder()
+                        .passwordEncoder(password -> PasswordEncoderFactories.createDelegatingPasswordEncoder().encode(password))
+                        .username("Junhyunny")
+                        .password("12345")
+                        .authorities("ADMIN")
+                        .build()
+        );
+
+        assertThatThrownBy(() ->
+                mockMvc.perform(
+                        post("/login")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(objectMapper.writeValueAsString(userDto))
+                )
+        ).hasCause(new RuntimeException("password is not matched"));
+    }
 }

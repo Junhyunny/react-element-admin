@@ -1,6 +1,8 @@
 package spring.element.admin.backend.user.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,7 +19,10 @@ public class LoginController {
 
     @PostMapping("/login")
     public TokenDto login(@RequestBody UserDto userDto) {
-        userService.loadUserByUsername(userDto.getUserId());
+        UserDetails userDetails = userService.loadUserByUsername(userDto.getUserId());
+        if (!PasswordEncoderFactories.createDelegatingPasswordEncoder().matches(userDto.getPassword(), userDetails.getPassword())) {
+            throw new RuntimeException("password is not matched");
+        }
         return TokenDto.builder()
                 .accessToken(JwtUtil.createAccessToken())
                 .refreshToken(JwtUtil.createRefreshToken())
