@@ -6,13 +6,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.springframework.http.MediaType;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import spring.element.admin.backend.user.dto.TokenDto;
 import spring.element.admin.backend.user.dto.UserDto;
+import spring.element.admin.backend.user.service.UserService;
 import spring.element.admin.backend.utils.JwtUtil;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.Mockito.when;
@@ -23,9 +26,14 @@ public class LoginControllerTest {
 
     MockMvc mockMvc;
 
+    UserService mockUserService;
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
     @BeforeEach
     public void beforeEach() {
-        mockMvc = MockMvcBuilders.standaloneSetup(new LoginController()).build();
+        mockUserService = Mockito.mock(UserService.class);
+        mockMvc = MockMvcBuilders.standaloneSetup(new LoginController(mockUserService)).build();
     }
 
     @Test
@@ -38,7 +46,6 @@ public class LoginControllerTest {
     @Test
     public void givenUserDto_whenLogin_thenReturnAccessToken() throws Exception {
 
-        ObjectMapper objectMapper = new ObjectMapper();
         UserDto userDto = UserDto.builder()
                 .userId("Junhyunny")
                 .password("1234")
@@ -62,6 +69,25 @@ public class LoginControllerTest {
         assertThat(tokenDto.getAccessToken(), equalTo("accessToken"));
         assertThat(tokenDto.getRefreshToken(), equalTo("refreshToken"));
         assertThat(tokenDto.getTokenType(), equalTo("Bearer"));
+    }
+
+    @Test
+    public void givenNotExistsUser_whenLogin_thenThrowUserNameNotFoundException() throws Exception {
+
+        UserDto userDto = UserDto.builder()
+                .userId("Junhyunny")
+                .password("1234")
+                .build();
+
+        when(mockUserService.loadUserByUsername("Junhyunny")).thenThrow(new UsernameNotFoundException("Not found user by username"));
+
+        assertThatThrownBy(() ->
+                mockMvc.perform(
+                        post("/login")
+                                .contentType(MediaType.APPLICATION_JSON_VALUE)
+                                .content(objectMapper.writeValueAsString(userDto))
+                )
+        ).hasCause(new UsernameNotFoundException("Not found user by username"));
     }
 
 }
