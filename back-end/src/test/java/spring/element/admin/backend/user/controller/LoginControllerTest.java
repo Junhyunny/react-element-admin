@@ -98,6 +98,7 @@ public class LoginControllerTest {
                                 .content(objectMapper.writeValueAsString(userDto))
                 )
         ).hasCause(new UsernameNotFoundException("Not found user by username"));
+
     }
 
     @Test
